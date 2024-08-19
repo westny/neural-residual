@@ -22,8 +22,9 @@ We supply a baseline model that can be used to train and evaluate the residuals 
 <br>
 The code relies heavily on [<img alt="Pytorch logo" src=https://github.com/westny/dronalize/assets/60364134/b6d458a5-0130-4f93-96df-71374c2de579 height="12">PyTorch](https://pytorch.org/docs/stable/index.html) and [<img alt="Lightning logo" src=https://github.com/westny/dronalize/assets/60364134/167a7cbb-8346-44ac-9428-5f963ada54c2 height="16">PyTorch Lightning](https://lightning.ai/docs/pytorch/stable/) for its functionality.
 
+
 <p align="center">
-  <img width="900" src=https://github.com/user-attachments/assets/e2be85c6-d439-43b9-9502-9a836882930c>
+  <img width="900" src=https://github.com/user-attachments/assets/9a46d291-c57e-464f-8bcd-b06734499383>
   <br>
   <em> Visualization of ground truth and predicted signals on test data using a trained model.</em>
 </p>
