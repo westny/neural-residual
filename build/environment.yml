@@ -1,0 +1,19 @@
+name: pyresidual
+channels:
+  - conda-forge
+  - pytorch
+  - nvidia
+dependencies:
+  - python=3.11.*
+  - pip
+  - pytorch=2.2.*
+  - pytorch-cuda=12.1
+  - lightning
+  - wandb
+  - scikit-learn
+  - tqdm
+  - numpy=1.25.*
+  - seaborn
+  - matplotlib
+  - pandas
+  - pyarrow

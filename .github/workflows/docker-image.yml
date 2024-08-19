@@ -1,0 +1,25 @@
+name: Docker CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-22.04
+    env:
+      IMAGE_TAG: ${{ github.run_id }}
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build the Docker image
+      run: |
+        cd build
+        docker build -f Dockerfile . -t pyresidual:${IMAGE_TAG}
+
+    - name: Run PyTorch Training Loop
+      run: |
+        docker run -v "$(pwd)":/app -w /app pyresidual:${IMAGE_TAG} python train.py
+

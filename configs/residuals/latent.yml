@@ -1,0 +1,51 @@
+# Copyright 2024, Theodor Westny. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# General Description
+description: Latent1
+
+signals: {
+  intercooler_pressure: "y_p_ic",
+  intercooler_temperature: "y_T_ic",
+  intake_manifold_pressure: "y_p_im",
+  air_mass_flow: "y_W_af",
+  engine_speed: "y_omega_e",
+  throttle_position: "y_alpha_th",
+  wastegate_position: "y_u_wg",
+  injected_fuel_mass: "y_wfc",
+  ambient_temperature: "y_T_amb",
+  ambient_pressure: "y_p_amb"
+}
+
+# Signals to be zeroed
+zeroed_signals: null
+
+# Dynamic Equations
+dynamic: {
+  latent: {
+    states: [ latent ],
+    num_latents: 32,
+    inputs: [ y_W_af, y_alpha_th, y_omega_e, y_p_amb, y_p_im, y_u_wg, y_wfc ],
+  }
+}
+
+# Predictors
+predictors: {
+  y_p_ic: {
+    states: [ latent ],
+    use_latent : true,
+    inputs: [ ],
+  }
+}
+

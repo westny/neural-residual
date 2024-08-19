@@ -1,0 +1,10 @@
+torch==2.2.*
+lightning
+wandb
+scikit-learn
+tqdm
+numpy==1.25.*
+seaborn
+matplotlib
+pandas
+pyarrow
