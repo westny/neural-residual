@@ -461,7 +461,7 @@ If you find the contents of this repository helpful, please consider citing the 
 We welcome contributions to the toolbox, and we encourage you to submit pull requests with new features, bug fixes, or improvements.
 Any form of collaboration is appreciated, and we are open to suggestions for new features or changes to the existing codebase.
 
-Feel free [email us](mailto:theodor.westny@liu.se) if you have any questions or notice any issues with the code.
+Feel free to [email us](mailto:theodor.westny@liu.se) if you have any questions or notice any issues with the code.
 If you have any suggestions for improvements or new features, we would be happy to hear from you.
 
 ## License
