@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from pathlib import Path
+from time import strftime
+
+import pandas as pd
 import torch
 import torch.nn as nn
 import lightning.pytorch as pl
@@ -27,7 +31,6 @@ class LitModel(pl.LightningModule):
                  config: dict) -> None:
         super().__init__()
         self.model = model
-
         self.lr = config["lr"]
         self.decay = config["decay"]
         self.beta_max = config["beta_max"]
@@ -37,11 +40,39 @@ class LitModel(pl.LightningModule):
         self.loss_fn = mse_loss if config["criterion"] == "mse" else huber_loss
         self.denormalize = config["denormalize"]
         self.store_prediction = config["store_test_pred"]
+        self.catalog = config.get("catalog", None)
 
         self.save_hyperparameters(ignore=['model'])
 
     def forward(self, *args, **kwargs) -> None:
         pass
+
+    @staticmethod
+    def save_preds_and_states(pred: torch.Tensor,
+                              states: torch.Tensor,
+                              targets: torch.Tensor,
+                              test_df: pd.DataFrame,
+                              test_file: str,
+                              save_path: Path) -> None:
+        curr_time = strftime('%d-%m_%H:%M:%S')
+
+        pred = pred.detach().cpu().numpy()
+        signals = [signal + "_hat" for signal in targets]
+
+        # add predictions to dataframe
+        for i, signal in enumerate(signals):
+            test_df[signal] = pred[:, :, i].flatten()
+
+        # save dataframe to csv
+        save_pred_path = save_path / f"test_predictions_{test_file}_{curr_time}.csv"
+        test_df.to_csv(save_pred_path, index=False)
+
+        # save states in separate csv
+        states = states.detach().cpu().numpy().reshape(-1, states.shape[-1])
+        state_names = [f"state_{i}" for i in range(states.shape[-1])]
+        state_df = pd.DataFrame(states, columns=state_names)
+        save_state_path = save_path / f"states_{test_file}_{curr_time}.csv"
+        state_df.to_csv(save_state_path, index=False)
 
     @staticmethod
     def data_info(target: torch.Tensor) -> tuple[int, int]:
@@ -52,6 +83,7 @@ class LitModel(pl.LightningModule):
 
         int_steps, batch_size = self.data_info(target)
         pred, _, q = self.model(inputs, int_steps, self.sample_time, self.training)
+
         if q is not None:
             std_normal = tdist.Normal(torch.zeros_like(q.loc), torch.ones_like(q.scale))
             kl_div = tdist.kl_divergence(q, std_normal).sum(-1).mean()
@@ -77,8 +109,7 @@ class LitModel(pl.LightningModule):
     def test_step(self, data, batch_idx) -> None:
         inputs, target = data
         int_steps, batch_size = self.data_info(target)
-
-        pred, *_ = self.model(inputs, int_steps, self.sample_time, self.training)
+        pred, states, _ = self.model(inputs, int_steps, self.sample_time, self.training)  # get the states
 
         if self.denormalize:
             # denormalize data for evaluation
@@ -90,29 +121,24 @@ class LitModel(pl.LightningModule):
         loss = mse_loss(pred, target).mean()
 
         if self.store_prediction:
-            from time import strftime
             assert batch_size == 1, "Currently, only batch size 1 is supported for storing predictions. " \
                                     "This corresponds to setting test_sequence_len=-1."
 
-            if not self.denormalize:
-                # if not already denormalized, do so for result storage
-                mean = self.trainer.datamodule.trg_mean.to(self.device)
-                std = self.trainer.datamodule.trg_std.to(self.device)
-                pred = pred * std + mean
+            save_path = Path("predictions") / (self.catalog or "")
+            save_path.mkdir(parents=True, exist_ok=True)
 
-            pred = pred.detach().cpu().numpy()
-            signals = [signal + "_hat" for signal in self.trainer.datamodule.targets]
-            test_df = self.trainer.datamodule.test_data
+            test_file = Path(self.trainer.datamodule.test_file).stem
+            test_df = self.trainer.datamodule.test_data.copy()
+            targets = self.trainer.datamodule.targets
 
-            # add predictions to dataframe
-            for i, signal in enumerate(signals):
-                test_df[signal] = pred[:, :, i].flatten()
-
-            test_file = self.trainer.datamodule.test_file.split('.')[0]
-
-            # save dataframe to csv
-            save_name = f"test_predictions_{test_file}_{strftime('%d-%m_%H:%M:%S')}.csv"
-            test_df.to_csv(save_name, index=False)
+            self.save_preds_and_states(
+                pred=pred,
+                states=states,
+                targets=targets,
+                test_df=test_df,
+                test_file=test_file,
+                save_path=save_path
+            )
 
         self.log("test_loss", loss, on_epoch=True, batch_size=batch_size, prog_bar=True)
 

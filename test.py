@@ -109,6 +109,14 @@ if __name__ == "__main__":
     else:
         add_name = ""
 
+    # check if args.residual_conf ends with .yml, if so, remove it
+    if args.residual_conf.endswith('.yml'):
+        save_catalog = args.residual_conf[:-4] + add_name
+    else:
+        save_catalog = args.residual_conf + add_name
+
+    config['training']['catalog'] = save_catalog
+
     model_name = f'{residual["description"]}_{config["architecture"]}{add_name}'
 
     print(f'Preparing to evaluate model: {model_name}')

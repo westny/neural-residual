@@ -12,6 +12,7 @@ wandb
 Engine/
 data/
 saved_models
+predictions
 learned_poles
 *NS*
 *.ckpt

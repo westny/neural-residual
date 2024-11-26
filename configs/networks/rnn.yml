@@ -96,6 +96,6 @@ training: {
   sample_time: 0.05,
   clip: 1.0,
   criterion: mse,
-  denormalize: false,
+  denormalize: true,
   store_test_pred: true,
 }

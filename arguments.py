@@ -42,6 +42,10 @@ parser.add_argument('--use-logger', type=str_to_bool, default=False,
                     const=True, nargs="?", help='if logger should be used (default: False)')
 parser.add_argument('--use-cuda', type=str_to_bool, default=True,
                     const=True, nargs="?", help='if cuda exists and should be used (default: True)')
+parser.add_argument('--balance-data', type=str_to_bool, default=False,
+                    const=True, nargs="?", help='if data should be balanced (default: False)')
+parser.add_argument('--noise-level', type=float, default=0.0,
+                    help='noise level for data augmentation (default: 0.0)')
 parser.add_argument('--store-model', type=str_to_bool, default=True,
                     const=True, nargs="?", help='if checkpoints should be stored (default: False)')
 parser.add_argument('--overwrite', type=str_to_bool, default=True,

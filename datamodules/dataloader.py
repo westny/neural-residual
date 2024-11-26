@@ -54,6 +54,12 @@ class LitDataModule(pl.LightningDataModule):
         self.train_file = config["train_file"]
         self.test_file = config["test_file"]
 
+        self.balance = args.balance_data
+        self.noise_level = args.noise_level
+        self.n_workers = args.num_workers
+        self.pin_memory = args.pin_memory
+        self.persistent = args.persistent_workers
+
         assert len(self.signals) > 0, "No signals found in the residual dictionary"
         assert len(self.targets) > 0, "No targets found in the residual dictionary"
 
@@ -73,10 +79,6 @@ class LitDataModule(pl.LightningDataModule):
 
         self.train_val_split()
         self.test_split()
-
-        self.n_workers = args.num_workers
-        self.pin_memory = args.pin_memory
-        self.persistent = args.persistent_workers
 
     def train_val_split(self):
         inp_indices = [i for i, c in enumerate(self.train_data.columns) if c in self.signals]
@@ -125,8 +127,7 @@ class LitDataModule(pl.LightningDataModule):
         self.test_inp = test_input_tensor
         self.test_trg = test_target_tensor
 
-    @staticmethod
-    def process_data(data, l, n, trg_cols_indices, inp_cols_indices, seed=0):
+    def process_data(self, data, l, n, trg_cols_indices, inp_cols_indices, seed=0):
         # Split data into l-length segments
         segments = [data[i:i + l] for i in range(0, len(data), l) if i + l <= len(data)]
 
@@ -161,6 +162,9 @@ class LitDataModule(pl.LightningDataModule):
         val_inp = [seg[:, inp_cols_indices] for seg in val_data_standardized]
         val_trg = [seg[:, trg_cols_indices] for seg in val_data_standardized]
 
+        if self.balance:
+            train_inp, train_trg = self.balance_data(train_inp, train_trg)
+
         # Convert to torch tensors
         train_input_tensor = torch.from_numpy(np.stack(train_inp, axis=0)).float()
         train_target_tensor = torch.from_numpy(np.stack(train_trg, axis=0)).float()
@@ -185,6 +189,60 @@ class LitDataModule(pl.LightningDataModule):
             'trg_mean': trg_mean,
             'trg_std': trg_std
         }
+
+    def balance_data(
+            self,
+            train_inp: list[np.array],
+            train_trg: list[np.array],
+            sensitivity: float = 2.0,
+            p_target: float = 0.7) -> tuple[list[np.array], list[np.array]]:
+
+        seq_store = []
+
+        for seq in train_trg:
+            diff = np.diff(seq, axis=0, prepend=seq[:1])
+            abs_cusum = np.abs(diff).cumsum(0).sum(1)
+            seq_store.append(abs_cusum)
+
+        seq_cat = np.concatenate(seq_store, axis=0)
+        seq_med = np.median(seq_cat, axis=0)
+        seq_mad = np.median(np.abs(seq_cat - seq_med), axis=0)
+
+        threshold = seq_med + sensitivity * seq_mad
+
+        above_threshold_idx = [i for i, seq in enumerate(seq_store) if seq[-1] > threshold]
+
+        # Calculate how many instances should be added
+        tot_num = len(seq_store)
+        k_start = len(above_threshold_idx)
+        p_init = k_start / tot_num
+
+        if p_init >= p_target:
+            return train_inp, train_trg
+
+        k_end = p_target * (tot_num - k_start) / (1 - p_target)
+        k_add = int(k_end - k_start)  # Number of instances to add to reach the target percentage
+
+        new_train_inp = [arr for arr in train_inp]
+        new_train_trg = [arr for arr in train_trg]
+
+        for _ in range(k_add):
+            idx_1 = np.random.choice(above_threshold_idx)
+            inp_1 = train_inp[idx_1]
+            trg_1 = train_trg[idx_1]
+
+            inp_noise = self.noise_level * np.random.randn(inp_1.shape[0], 1)
+            trg_noise = self.noise_level * np.random.randn(trg_1.shape[0], 1)
+
+            inp_1 = inp_1 + inp_noise
+            trg_1 = trg_1 + trg_noise
+
+            new_train_inp.append(inp_1)
+            new_train_trg.append(trg_1)
+
+        print(f"Data was balanced by adding {k_add} minority instances.")
+
+        return new_train_inp, new_train_trg
 
     def train_dataloader(self):
         dataset = MTSDataset(self.train_inp, self.train_trg)

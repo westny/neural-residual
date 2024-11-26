@@ -16,6 +16,57 @@ import os
 import pandas as pd
 import matplotlib.pyplot as plt
 
+
+def plot_engine_data(file, root, signals=None, standardize=False, file2=None):
+    """
+        Plots engine data from one or two CSV files.
+
+        Args:
+            file (str): The name of the primary CSV file.
+            root (str): The root directory containing the CSV files.
+            signals (dict): A dictionary mapping signal names to column names in the CSV files.
+            standardize (bool, optional): Whether to standardize the data before plotting. Defaults to False.
+            file2 (str, optional): The name of the secondary CSV file. Defaults to None.
+
+        Returns:
+            None
+    """
+
+    path = os.path.join(root, file)
+    df = pd.read_csv(path)
+    df.columns = df.columns.str.lower()
+
+    if signals is not None:
+        df = df.rename(columns=signals)
+    if standardize:
+        df = (df - df.mean()) / df.std()
+
+    if file2 is not None:
+        path2 = os.path.join(root, file2)
+        df2 = pd.read_csv(path2)
+        df2.columns = df2.columns.str.lower()
+        if signals is not None:
+            df2 = df2.rename(columns=signals)
+        if standardize:
+            df2 = (df2 - df2.mean()) / df2.std()
+        t2 = df2["time"]
+    else:
+        df2 = None
+        t2 = None
+
+    t = df["time"]
+    plt.figure(figsize=(10, 10))
+    for i, (key, value) in enumerate(signals.items()):
+        plt.subplot(5, 2, i + 1)
+        plt.plot(t, df[value], label="df1")
+        if file2 is not None:
+            plt.plot(t2, df2[value], label="df2")
+        plt.title(key)
+        plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+
 signals = {
     "intercooler_pressure": "y_p_ic",
     "intercooler_temperature": "y_T_ic",
@@ -30,38 +81,10 @@ signals = {
 }
 
 
-file1 = "wltp_NF.csv"
-# file2 = "wltp_NF_2.csv"
-file2 = "wltp_f_waf_115.csv"
+if __name__ == "__main__":
+    file1 = "wltp_NF.csv"
+    file2 = "wltp_f_waf_110.csv"
+    root = "../data/engine/train"
 
-root = "../data/engine"
-
-path1 = os.path.join(root, file1)
-path2 = os.path.join(root, file2)
-
-df1 = pd.read_csv(path1)
-df2 = pd.read_csv(path2)
-
-df1.columns = df1.columns.str.lower()
-df2.columns = df2.columns.str.lower()
-
-df1 = df1.rename(columns=signals)
-df2 = df2.rename(columns=signals)
-
-# standardize data
-# df1 = (df1 - df1.mean()) / df1.std()
-# df2 = (df2 - df2.mean()) / df2.std()
-
-t1 = df1["time"]
-t2 = df2["time"]
-
-# plot data
-plt.figure(figsize=(10, 10))
-for i, (key, value) in enumerate(signals.items()):
-    plt.subplot(5, 2, i + 1)
-    plt.plot(t1, df1[value], label="df1")
-    plt.plot(t2, df2[value], label="df2")
-    plt.title(key)
-    plt.legend()
-plt.tight_layout()
-plt.show()
+    plot_engine_data(file1, root, signals, standardize=False)
+    # plot_engine_data(file2, root, signals, standardize=False, file2=file2)
