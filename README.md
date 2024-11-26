@@ -46,7 +46,7 @@ We supply a baseline model that can be used to train and evaluate the residuals 
 There are several alternatives to installation, depending on your needs and preferences.
 Our recommendation and personal preference is to use containers for reproducibility and consistency across different environments.
 We have provided both an Apptainer .def file and a Dockerfile for this purpose.
-Both recipes use the `mamba` package manager for creating the environments. 
+Both recipes use the `mamba` package manager to create the environments. 
 In both cases, they utilize the same `environment.yml` file that could also be used to create a local conda environment if desired.
 Additionally, we provide a `requirements.txt` file for those who prefer to use `pip` for package management.
 All necessary files to install the required dependencies are found in the [build](build) directory.
@@ -213,7 +213,7 @@ conda deactivate
 
 </details>
 
-### <img alt="Pypi logo" src=https://res.cloudinary.com/practicaldev/image/fetch/s--4-K6Sjm4--/c_imagga_scale,f_auto,fl_progressive,h_420,q_auto,w_1000/https://cdn-images-1.medium.com/max/1600/1%2A_Wkc-WkNu6GJAAQ26jXZOg.png width="100">
+### <img alt="Pypi logo" src=https://github.com/user-attachments/assets/41e5853c-35db-4b00-8b35-c888a1b55979 width="100">
 <a id="pypi"></a>
 Using `pip` to install dependencies directly from PyPI is a straightforward approach. This option works well for users who prefer not to use containers or conda environments but want to manage dependencies via a `requirements.txt` file.
 We recommend using a virtual environment to avoid conflicts with other packages.
