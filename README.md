@@ -20,7 +20,7 @@ The code is designed to be easily modifiable and extendable, allowing users to e
 At the core of the model-building process is the adoption of [neural ordinary differential equations](https://arxiv.org/abs/1806.07366) (neural ODEs) for modeling dynamic equations within the system.
 We supply a baseline model that can be used to train and evaluate the residuals on our open combustion engine dataset, but the code can be easily modified to work with other datasets and models.
 <br>
-The code relies heavily on [<img alt="Pytorch logo" src=https://github.com/westny/dronalize/assets/60364134/b6d458a5-0130-4f93-96df-71374c2de579 height="12">PyTorch](https://pytorch.org/docs/stable/index.html) and [<img alt="Lightning logo" src=https://github.com/westny/dronalize/assets/60364134/167a7cbb-8346-44ac-9428-5f963ada54c2 height="16">PyTorch Lightning](https://lightning.ai/docs/pytorch/stable/) for its functionality.
+<br> The toolbox utilizes [<img alt="Pytorch logo" src=https://github.com/westny/dronalize/assets/60364134/b6d458a5-0130-4f93-96df-71374c2de579 height="12">PyTorch](https://pytorch.org/docs/stable/index.html) and [<img alt="Lightning logo" src=https://github.com/westny/dronalize/assets/60364134/167a7cbb-8346-44ac-9428-5f963ada54c2 height="16">PyTorch Lightning](https://lightning.ai/docs/pytorch/stable/) for its functionality.
 
 
 <p align="center">
@@ -51,17 +51,39 @@ In both cases, they utilize the same `environment.yml` file that could also be u
 Additionally, we provide a `requirements.txt` file for those who prefer to use `pip` for package management.
 All necessary files to install the required dependencies are found in the [build](build) directory.
 
-### <img alt="Apptainer logo" src=https://github.com/westny/dronalize/assets/60364134/6a9e51ae-c6ce-4ad1-b79f-05ca7d959062 width="110">
-<a id="apptainer"></a>
 
-[Apptainer](https://apptainer.org/docs/user/main/index.html) is a lightweight containerization tool that we prefer for its simplicity and ease of use.
-Once installed, you can build the container by running the following command:
+### <img alt="Apptainer logo" src=https://github.com/westny/dronalize/assets/60364134/6a9e51ae-c6ce-4ad1-b79f-05ca7d959062 width="110">
+[Apptainer](https://apptainer.org/docs/user/main/index.html) is commonly used in high-performance computing (HPC) for creating secure, portable, and reproducible environments. It is well-suited for research and scientific workflows.
+It is a lightweight containerization tool that we prefer for its simplicity and ease of use.
+
+<details>
+  <summary>Click here for Installation Instructions</summary>
+
+### Installation Instructions:
+
+If you have not already done so, start by installing Apptainer on your system by following the instructions on the [Apptainer website](https://apptainer.org/docs/user/main/quick_start.html#installation).
+
+#### Option 1: Pull a Pre-built Image from Docker Hub
+
+You can pull a pre-built image from Docker Hub by running the following command:
+
+```bash
+apptainer pull pyresidual.sif docker://westny/pyresidual:latest
+```
+
+This will download the latest version of the image to your local machine.
+
+
+#### Option 2: Build the Image Locally
+You can build the container by running the following command:
 
 ```bash
 apptainer build pyresidual.sif /path/to/definition_file
 ```
 
 where `/path/to/definition_file` is the path to the `apptainer.def` file in the repository.
+
+### Running the Container:
 Once built, it is very easy to run the container as it only requires a few extra arguments. 
 For example, to start the container and execute the `train.py` script, you can run the following command from the repository root directory:
 
@@ -75,15 +97,47 @@ If you have CUDA installed and want to use GPU acceleration, you can add the `--
 apptainer run --nv /path/to/pyresidual.sif python train.py
 ```
 
+</details>
+
 ### <img alt="Docker logo" src=https://github.com/westny/dronalize/assets/60364134/1bf2df76-ab44-4bae-9623-03710eff0572 width="100">
-<a id="docker"></a>
-If you prefer to use [Docker](https://www.docker.com/get-started/), you can build the container by running the following command from the build directory:
+[Docker](https://www.docker.com/get-started/) is a widely adopted platform for automating the deployment and management of containerized applications. It is suitable for users familiar with containers or those needing an isolated runtime environment.
+
+<details>
+  <summary>Click here for Installation Instructions</summary>
+
+  ### Installation Instructions:
+
+If you have not already done so, start by installing Docker on your system by following the instructions on the [Docker website](https://docs.docker.com/get-docker/).
+
+#### Option 1: Pull a Pre-built Image from Docker Hub
+
+You can pull a pre-built image from Docker Hub by running the following command:
+
+```bash
+docker pull westny/pyresidual:latest
+```
+
+This will download the latest version of the image to your local machine.
+
+We recommend tagging the image for easier use:
+
+```bash
+docker tag westny/pyresidual:latest pyresidual
+```
+
+#### Option 2: Build the Image Locally
+
+You can build the image by running the following command from the container root directory:
 
 ```bash 
 docker build -t pyresidual .
 ```
 
 This will create a Docker image named `pyresidual` with all the necessary dependencies.
+
+
+### Running the Container
+
 To run the container, you can use the following command:
 
 ```bash
@@ -96,6 +150,8 @@ Example of how this is done from the repository root directory:
 ```bash
 docker run -v "$(pwd)":/app -w /app pyresidual python train.py
 ```
+
+### GPU Acceleration
 
 To use GPU acceleration, you need to install the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html)
 
@@ -116,9 +172,19 @@ and run the container with the `--gpus all` flag.
 docker run --gpus all -v "$(pwd)":/app -w /app pyresidual python train.py
 ```
 
+</details>
+
 ### <img alt="Conda logo" src=https://github.com/westny/dronalize/assets/60364134/52d02aa9-6231-4261-8e0f-6c092991c89c width="100">
-<a id="conda"></a>
-If you prefer to not use containers, you can create a [conda](https://conda.io/projects/conda/en/latest/index.html) environment using the `environment.yml` file.
+[Conda](https://conda.io/projects/conda/en/latest/index.html) is a package and environment manager that allows users to create isolated environments without using containers.
+It is useful for managing dependencies in Python and other languages.
+
+<details>
+  <summary>Click here for Installation Instructions</summary>
+
+  ### Installation Instructions:
+
+You can create a [conda](https://conda.io/projects/conda/en/latest/index.html) environment using the provided `environment.yml` file.
+
 To create the environment, run the following command:
 
 ```bash
@@ -145,10 +211,18 @@ To deactivate the environment, run:
 conda deactivate
 ```
 
+</details>
+
 ### <img alt="Pypi logo" src=https://res.cloudinary.com/practicaldev/image/fetch/s--4-K6Sjm4--/c_imagga_scale,f_auto,fl_progressive,h_420,q_auto,w_1000/https://cdn-images-1.medium.com/max/1600/1%2A_Wkc-WkNu6GJAAQ26jXZOg.png width="100">
 <a id="pypi"></a>
-You also have the option to install the necessary libraries using `pip` using the `requirements.txt` file.
+Using `pip` to install dependencies directly from PyPI is a straightforward approach. This option works well for users who prefer not to use containers or conda environments but want to manage dependencies via a `requirements.txt` file.
 We recommend using a virtual environment to avoid conflicts with other packages.
+
+<details>
+  <summary>Click here for Installation Instructions</summary>
+
+  ### Installation Instructions:
+
 First, create a new virtual environment using `venv`:
 
 ```bash
@@ -175,6 +249,7 @@ deactivate
 ```
 
 Anytime you want to use the environment, you need to activate it again.
+</details>
 
 <br>
 
