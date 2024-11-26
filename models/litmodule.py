@@ -37,6 +37,7 @@ class LitModel(pl.LightningModule):
         self.loss_fn = mse_loss if config["criterion"] == "mse" else huber_loss
         self.denormalize = config["denormalize"]
         self.store_prediction = config["store_test_pred"]
+        self.catalog = config.get("catalog", None)
 
         self.save_hyperparameters(ignore=['model'])
 
@@ -78,7 +79,7 @@ class LitModel(pl.LightningModule):
         inputs, target = data
         int_steps, batch_size = self.data_info(target)
 
-        pred, *_ = self.model(inputs, int_steps, self.sample_time, self.training)
+        pred, states, _ = self.model(inputs, int_steps, self.sample_time, self.training)  # get the states
 
         if self.denormalize:
             # denormalize data for evaluation
@@ -91,14 +92,13 @@ class LitModel(pl.LightningModule):
 
         if self.store_prediction:
             from time import strftime
+            from pathlib import Path
+            from pandas import DataFrame
             assert batch_size == 1, "Currently, only batch size 1 is supported for storing predictions. " \
                                     "This corresponds to setting test_sequence_len=-1."
 
-            if not self.denormalize:
-                # if not already denormalized, do so for result storage
-                mean = self.trainer.datamodule.trg_mean.to(self.device)
-                std = self.trainer.datamodule.trg_std.to(self.device)
-                pred = pred * std + mean
+            save_path = Path("predictions") / self.catalog if self.catalog is not None else Path("predictions")
+            curr_time = strftime('%d-%m_%H:%M:%S')
 
             pred = pred.detach().cpu().numpy()
             signals = [signal + "_hat" for signal in self.trainer.datamodule.targets]
@@ -111,8 +111,19 @@ class LitModel(pl.LightningModule):
             test_file = self.trainer.datamodule.test_file.split('.')[0]
 
             # save dataframe to csv
-            save_name = f"test_predictions_{test_file}_{strftime('%d-%m_%H:%M:%S')}.csv"
-            test_df.to_csv(save_name, index=False)
+            save_name = f"test_predictions_{test_file}_{curr_time}.csv"
+            save_pred_path = save_path / save_name
+            test_df.to_csv(save_pred_path, index=False)
+
+            # Store states in separate csv
+            states = states.detach().cpu().numpy().reshape(-1, states.shape[-1])
+            state_names = [f"state_{i}" for i in range(states.shape[-1])]
+            state_df = DataFrame(states, columns=state_names)
+
+            save_name = f"states_{test_file}_{curr_time}.csv"
+            save_state_path = save_path / save_name
+
+            state_df.to_csv(save_state_path, index=False)
 
         self.log("test_loss", loss, on_epoch=True, batch_size=batch_size, prog_bar=True)
 
